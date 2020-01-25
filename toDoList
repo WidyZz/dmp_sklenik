@@ -1,0 +1,17 @@
+1. regulator
+2. nastaveni regulace teploty (casovani)
+3. zalevani
+4. roseni
+5. otevirani oken na zaklade teploty
+6. vlhkost
+//
+1. Webserver
+2. Vypis hodnot skleniku (teplota, vlhkost vzduchu, jestli je zalito, (osvětlení))
+3. Manuální ovládání (otevírání oken, topení, větrání)
+
+//Kontrolky
+1. Topim
+2. vetram
+3. zalevam
+4. rosim
+5. okno otevrene/zavrene
