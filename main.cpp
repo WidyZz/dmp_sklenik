@@ -68,20 +68,14 @@ void regulator_teloty(){
 }
 
 void regulace_teploty(){
-  while (tep_zesil > 5){
-    digitalWrite(teptel_pin, RELE_SEP);
-    break;
+  if(tep_zesil > 0){
+    tep_zesil = RELE_SEP;
   }
-  while(-2 > tep_zesil && tep_zesil >2){
-    digitalWrite(teptel_pin, RELE_ROZEP);
-    digitalWrite(chlaz_pin, RELE_ROZEP);
-    break;
+
+  if(tep_zesil < 0){
+    tep_zesil = RELE_ROZEP;
   }
-  while (tep_zesil <= -5){
-    digitalWrite(teptel_pin, RELE_ROZEP);
-    digitalWrite(chlaz_pin, RELE_SEP);
-    break;
-  }
+  digitalWrite(teptel_pin, tep_zesil);
 }
 
 void zalevani(){
