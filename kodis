@@ -1,0 +1,93 @@
+#include <Arduino.h>
+#include <DHT.h>
+#include <math.h>
+#include "WiFi.h"
+#include "ESPAsyncWebServer.h"
+//=================================================================
+//=============================PINY================================
+#define chlapin 26
+#define teptel 27
+#define teplomer1 13
+#define H_M_A1 12
+#define H_M_B1 14
+#define typDHT DHT11
+DHT vnitrni(teplomer1, typDHT);
+//promenne
+//=================================================================
+//===========================PRO VLHKOST===========================
+float optvlhk= 70.00; //optimalni vlhkost
+float momvlhk= 0.00; //momentální vlhkost
+float vlh_odch;//rozdil optimalni a momentalni vlhkosti
+float vlh_predchozi_odch;//predchozi ochylka
+float ubeh_cas, cas, min_cas;//ubehnuty, momentalni, minuly cas
+float vlh_zesil; //zesílení
+//PSD konstanty pro vlhkost
+float Pv= 1.11; float Sv = 0.98; float Dv = 0.77; //koeficienty regulatoru PSD pro vlhkost
+int PSD_pv = 0; int PSD_sv = 0; int PSD_dv = 0;
+//=================================================================
+//=========================PRO TEPLOTU=============================
+float momtep = 0.0;//ctena hodnota -- vystup
+float opttep = 30.00;//pozadovana hodnota
+float tep_odch;//regulacni odchylka - rozdil teplot
+float tep_predchozi_odch;//predchozi odchylka
+float tep_zesil = 0;//zesileni
+//PSD konstanty pro teplotu
+float Pt=2;/*P konstanta*/ float St=1;/*S konstanta*/ float Dt=1;/*D konstanta*/
+int PSD_pt = 0;/*velikost P*/ int PSD_st= 0; /*velikost S*/ int PSD_dt = 0; /*velikost D*/ 
+void setup() {
+  Serial.begin(115200);
+  pinMode(teptel, OUTPUT);
+  pinMode(chlapin, OUTPUT);
+  pinMode(H_M_A1, OUTPUT);
+  pinMode(H_M_B1, OUTPUT);
+  vnitrni.begin();
+}
+
+void loop() {
+  topeni();
+  vlhkost();
+  digitalWrite(H_M_A1, HIGH);
+  digitalWrite(H_M_B1 , LOW); 
+
+}
+void topeni(){
+  momtep = vnitrni.readTemperature();//cteme momentalni teplotu
+  tep_odch = opttep - momtep; //vypocet odchylky
+  PSD_pt = Pt * tep_odch; //vypocet P
+  min_cas = cas; //ulozeni casu pred nactenim aktualniho
+  if(-5 < tep_odch && tep_odch < 5){//vypocet S - za předpokladu, že se teplota liší o +-5 stupňů
+  PSD_st = PSD_st + (St * tep_odch);
+  }
+  cas = millis();//nacteni aktualniho casu
+  ubeh_cas = (cas - min_cas) / 1000;//ubehnuty cas momentalni - minuly
+  PSD_dt = Dt*((tep_odch - tep_predchozi_odch)/ubeh_cas);//vypocet D
+  tep_zesil = PSD_pt + PSD_st + PSD_dt;//vypocet zesileni
+  tep_zesil = constrain(tep_zesil, -255, 255);//oseknutí hodnot od 0 do 255 (hodnota 0 = LOW; hodnota 255 = HIGH --> spínáme relátko);
+  Serial.print("Topeni -> ");//vypsani do serioveho monitoru
+  Serial.println(tep_zesil);//vypsani do serioveho monitoru
+  Serial.print("Teplota -> ");//vypsani do serioveho monitoru
+  Serial.println(momtep);//vypsani aktualni teploty do s. monitoru
+  tep_predchozi_odch = tep_odch; //ulozime si momentalni chybu pro pristi cyklus
+  delay(750);
+  }
+
+void vlhkost(){
+  momvlhk = vnitrni.readHumidity(); //meřím vlhkost
+  vlh_odch = optvlhk - momvlhk; //reg. odchylka
+  PSD_pv = Pv * vlh_odch;//výpočet P
+  min_cas = cas; //ulozeni casu pred nactenim aktualniho
+  if(-10 < vlh_odch && vlh_odch > 10){ //Vypocet S clanku za předpokladu, že se vlhkost liší o 10%
+    PSD_sv = PSD_sv + (Sv * vlh_odch);
+  }
+  cas = millis();//nacteni aktualniho casu
+  ubeh_cas = (cas - min_cas) / 1000;
+  PSD_dv = Dv * ((vlh_odch - vlh_predchozi_odch)/ubeh_cas); //Vypocet D clanku
+  vlh_zesil = PSD_pv + PSD_sv + PSD_dv; //soucet vsech clanku
+  vlh_zesil = constrain(vlh_zesil, 0, 255);//nastavení nejmenší a největší možné hodnoty (0 = LOW; 255 = HIGH)
+    Serial.print("zavlaz -> ");//vypsani do serioveho monitoru
+  Serial.println(vlh_zesil);//vypsani do serioveho monitoru
+  Serial.print("momvlh -> ");//vypsani do serioveho monitoru
+  Serial.println(momvlhk);//vypsani aktualni vlhkosti do s. monitoru
+  vlh_predchozi_odch = vlh_odch; //ulozime si momentalni chybu pro pristi cyklus
+  delay(750);
+}
