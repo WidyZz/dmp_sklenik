@@ -1,6 +1,8 @@
 # dmp_sklenik
-Main.cpp -> programová část
-kodis -> něco jako to do list
+Main.cpp -> programová část\n
+Main-while.cpp -> "regulace" teploty pomocí while\n
+kodis -> něco jako to do list\n
+
 
 
 //Poznatky
