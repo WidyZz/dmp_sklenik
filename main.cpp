@@ -1,6 +1,4 @@
 /* Copyright (C) Vít Chvoj - All Rights Reserved
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
  * Written by Vít Chvoj <vitchvoj@gmail.com>, January 2020
  */
 //KNIHOVNY
